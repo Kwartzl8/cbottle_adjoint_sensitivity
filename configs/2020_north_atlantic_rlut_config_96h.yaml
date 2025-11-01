@@ -1,0 +1,38 @@
+# Main experiment settings
+experiment:
+  name: "Full Year 2020-2021 North Atlantic RLUT"
+  output_path: "/inference_output/2020_north_atlantic_rsut_24h_fixed_noise"
+  seed: 42 # Use an integer for reproducible noise, null for random
+
+# Model and data paths
+paths:
+  state_path: "cBottle-3d.zip"
+
+# Dataset and date range settings
+dataset:
+  name: "amip" # or "era5"
+  # split: "validation"
+  start_date: "2020-01-01 17:30:00"
+  end_date: "2020-04-01 17:30:00"
+  time_step_hours: 24
+
+# Q-function (quantity of interest) settings
+q_function:
+  names: [
+    "north_atlantic_rsut",
+    ]
+
+# Main sampling and generation parameters
+sampling:
+  batch_gpu: 14
+  min_samples: -1 # -1 means process the full date range
+  bf16: true
+  start_from_clean_image: false # For running reverse from ground truth
+  sigma_max: 80.0
+  num_steps: 32
+  use_fixed_noise: true # set to true for grad consistency check
+
+# Saving options
+saving:
+  save_generated_data: true # If true, saves X1 alongside gradients
+  hpx_level: 6

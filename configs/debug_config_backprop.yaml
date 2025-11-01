@@ -1,0 +1,44 @@
+# Main experiment settings
+experiment:
+  name: "Debug Backpropagation Gradient"
+  output_path: "/inference_output/trash"
+  seed: 42 # Use an integer for reproducible noise, null for random
+
+# Model and data paths
+paths:
+  state_path: "cBottle-3d.zip"
+
+# Dataset and date range settings
+dataset:
+  name: "amip" # or "era5"
+  # split: "validation"
+  # The start and end dates do not matter for climatology_sst=True
+  start_date: "2021-07-01 00:00:00"
+  end_date: "2021-07-03 00:00:00"
+  # The time step is important for climatology_sst=True.
+  time_step_hours: 2
+
+# Q-function (quantity of interest) settings
+q_function:
+  names: [
+    # "global_TOA_radiation",
+    "global_precipitation",
+    # "indian_ocean_rsut",
+    # "indian_ocean_sst"
+    ]
+
+# Main sampling and generation parameters
+sampling:
+  batch_gpu: 7
+  min_samples: -1 # -1 means process the full date range
+  bf16: true
+  start_from_clean_image: false # For running reverse from ground truth
+  climatology_sst: true
+  sigma_max: 80.0
+  num_steps: 2
+  use_fixed_noise: True # set to true for grad consistency check
+
+# Saving options
+saving:
+  save_generated_data: false # If true, saves X1 alongside gradients
+  hpx_level: 6

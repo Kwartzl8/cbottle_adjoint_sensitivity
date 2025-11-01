@@ -1,0 +1,40 @@
+# Main experiment settings
+experiment:
+  name: "January and February 2021 TOA radiation (rlut+rsut)"
+  output_path: "/inference_output/jan_feb_2021_toa_radiation"
+  seed: 42 # Use an integer for reproducible noise, null for random
+
+# Model and data paths
+paths:
+  state_path: "cBottle-3d.zip"
+
+# Dataset and date range settings
+dataset:
+  name: "amip"
+  start_date: "2021-01-01 00:00:00"
+  end_date: "2021-03-01 00:00:00"
+  time_step_hours: 48
+
+# Q-function (quantity of interest) settings
+q_function:
+  names: [
+    "global_TOA_radiation",
+    # "indian_ocean_rsut",
+    # "indian_ocean_sst"
+    ]
+
+# Main sampling and generation parameters
+sampling:
+  batch_gpu: 8
+  min_samples: -1 # -1 means process the full date range
+  bf16: true
+  start_from_clean_image: false # For running reverse from ground truth
+  climatology_sst: false
+  sigma_max: 80.0
+  num_steps: 18
+  use_fixed_noise: false # set to true for grad consistency check
+
+# Saving options
+saving:
+  save_generated_data: true # If true, saves X0 alongside gradients
+  hpx_level: 6

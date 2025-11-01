@@ -1,0 +1,39 @@
+# Main experiment settings
+experiment:
+  name: "Full Year 1971-2020 Global TOA Radiation Gradients"
+  output_path: "/inference_output/1971_2020_global_toa_rad_169h"
+  seed: 42 # Use an integer for reproducible noise, null for random
+
+# Model and data paths
+paths:
+  state_path: "cBottle-3d.zip"
+
+# Dataset and date range settings
+dataset:
+  name: "amip" # or "era5"
+  # split: "validation"
+  start_date: "1971-01-01 00:30:00"
+  end_date: "2020-01-01 00:30:00"
+  time_step_hours: 169
+
+# Q-function (quantity of interest) settings
+q_function:
+  names: [
+    "global_TOA_radiation",
+    # "indian_ocean_rsut"
+    ]
+
+# Main sampling and generation parameters
+sampling:
+  batch_gpu: 6
+  min_samples: -1 # -1 means process the full date range
+  bf16: true
+  start_from_clean_image: false # For running reverse from ground truth
+  sigma_max: 80.0
+  num_steps: 24
+  use_fixed_noise: false # set to true for grad consistency check
+
+# Saving options
+saving:
+  save_generated_data: false # If true, saves X1 alongside gradients
+  hpx_level: 6
