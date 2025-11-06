@@ -79,6 +79,14 @@ def get_differences(ds: xr.Dataset, q_names: list[str], sst_conditioning, times)
     finite_diff_doy = torch.diff(doys, dim=0)  # shape (time-1,)
     finite_diff_tod = torch.diff(tods, dim=0)  # shape (time-1,)
 
+    # Handle periodicity for DoY and ToD
+    DAYS_IN_HALF_YEAR = 365.25/2
+    SECONDS_IN_HALF_DAY = 12*3600
+    finite_diff_doy = torch.where(finite_diff_doy > DAYS_IN_HALF_YEAR, finite_diff_doy - 2*DAYS_IN_HALF_YEAR, finite_diff_doy)
+    finite_diff_doy = torch.where(finite_diff_doy < -DAYS_IN_HALF_YEAR, finite_diff_doy + 2*DAYS_IN_HALF_YEAR, finite_diff_doy)
+    finite_diff_tod = torch.where(finite_diff_tod > SECONDS_IN_HALF_DAY, finite_diff_tod - 2*SECONDS_IN_HALF_DAY, finite_diff_tod)
+    finite_diff_tod = torch.where(finite_diff_tod < -SECONDS_IN_HALF_DAY, finite_diff_tod + 2*SECONDS_IN_HALF_DAY, finite_diff_tod)
+
     q_values = {}
     finite_delta_q = {}
     linearized_delta_q = {}
@@ -105,19 +113,32 @@ def get_differences(ds: xr.Dataset, q_names: list[str], sst_conditioning, times)
     return q_values, finite_delta_q, linearized_delta_q
 
 
-def plot_grad_check(q_values: torch.Tensor, linearized_delta_q: torch.Tensor, times, q_name: str, output_folder: str):
-    plt.figure(figsize=(20, 6))
-    plt.scatter(range(len(q_values)), q_values.numpy(), label='q values', alpha=0.5)
-    for t in range(len(linearized_delta_q)):    # only plot up to T-1 as that is how many finite diffs we have
-        plt.plot([t, t+1], [q_values[t].item(), q_values[t].item() + linearized_delta_q[t].item()], color='red', alpha=0.7)
-    plt.title(f"Gradient Check for {q_name}.")
-    plt.xlabel("Time Index")
+def plot_grad_check(q_values: torch.Tensor, linearized_delta_q: torch.Tensor, times, q_name: str, output_folder: str, max_times=-1):
+    times = times[:max_times]
+    q_values = q_values[:max_times].clone()
+    linearized_delta_q = linearized_delta_q[:max_times].clone()
     num_ticks = min(20, len(times))
     tick_indices = [int(i * (len(times) - 1) / (num_ticks - 1)) for i in range(num_ticks)] if num_ticks > 1 else [0]
-    plt.xticks(tick_indices)
-    plt.gca().set_xticklabels([times[i].strftime('%Y-%m-%d %H') for i in tick_indices], rotation=25)
-    plt.ylabel(f"{q_name} values")
-    plt.legend()
+    fig,axes = plt.subplots(2,1, figsize=(20, 6))
+    axes[0].scatter(range(len(q_values)), q_values.numpy(), label='q values', alpha=0.5)
+    for t in range(len(linearized_delta_q)):    # only plot up to T-1 as that is how many finite diffs we have
+        axes[0].plot([t, t+1], [q_values[t].item(), q_values[t].item() + linearized_delta_q[t].item()], color='red', label='gradients' if t==0 else None, alpha=0.7)
+    axes[1].plot(torch.diff(q_values), label='Finite difference delta q', alpha=0.5)
+    axes[1].plot(linearized_delta_q, label='Linearized delta q', alpha=0.7)
+    
+    axes[0].set_xticklabels([])
+    axes[0].set_xticks(tick_indices)
+    axes[0].set_ylabel(r"$q$ values")
+    axes[1].set_xticks(tick_indices)
+    axes[1].set_xticklabels([times[i].strftime('%Y-%m-%d %H') for i in tick_indices], rotation=25)
+    axes[1].set_ylabel(r"$\delta q$ values")
+    axes[1].set_xlabel("Time")
+
+    axes[0].legend()
+    axes[1].legend()
+
+    fig.suptitle(f"Gradient Check for {q_name}.")
+
     if not os.path.exists(os.path.join(output_folder, "grad_check_plots")):
         os.makedirs(os.path.join(output_folder, "grad_check_plots"))
     plt.savefig(os.path.join(output_folder, "grad_check_plots", f"grad_check_{q_name}.png"))
@@ -144,23 +165,20 @@ def main():
     
     q_values_dict, delta_q_finite_dict, linearized_delta_q_dict = get_differences(concatenated_ds, q_names, sst_conditioning, times)
 
-    MAE_scores = {}
-    MAE_relative_scores = {}
+    RMSE_scores = {}
+    RMSE_relative_scores = {}
     for q_name in q_names:
         q_values = q_values_dict[q_name]
         delta_q_finite = delta_q_finite_dict[q_name]
         linearized_delta_q = linearized_delta_q_dict[q_name]
 
-        MAE = torch.mean(torch.abs(linearized_delta_q - delta_q_finite)).item()
         RMSE = torch.sqrt(torch.mean((linearized_delta_q - delta_q_finite)**2)).item()
-        relative_MAE = MAE / torch.mean(torch.abs(delta_q_finite)).item()
         # normalize by interquartile range
         iqr_q_values = torch.quantile(q_values, 0.75) - torch.quantile(q_values, 0.25)
         relative_RMSE = RMSE / iqr_q_values.item()
-        print(f"MAE {q_name}: {MAE}. Relative to the mean of delta_q_finite: {relative_MAE}")
-        print(f"RMSE {q_name}: {RMSE}. Relative to the mean of delta_q_finite: {relative_RMSE}")
-        MAE_scores[q_name] = MAE
-        MAE_relative_scores[q_name] = relative_MAE
+        print(f"RMSE {q_name}: {RMSE}. Relative to interquartile range of {q_name}: {relative_RMSE}")
+        RMSE_scores[q_name] = RMSE
+        RMSE_relative_scores[q_name] = relative_RMSE
 
         # Plot.
         plot_grad_check(q_values, linearized_delta_q, times, q_name, output_folder)
