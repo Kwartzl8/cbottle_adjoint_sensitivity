@@ -1,3 +1,4 @@
+[![arXiv](https://img.shields.io/badge/arXiv-2511.00663-b31b1b.svg)](https://arxiv.org/abs/2511.00663)
 # Sensitivity Analysis with Climate in a Bottle
 ![alt text](grad_check_north_atlantic_rsut_2020-01-01_2020-03-05.png)
 Accepted at CCAI-NeurIPS25. [ArXiv link](https://arxiv.org/abs/2511.00663).
