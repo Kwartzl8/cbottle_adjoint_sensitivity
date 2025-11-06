@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+uv.lock
+
+# Output data
+inference_output/
+logs/
+averaged_gradient_plots/
+forward_inference/
+cBottle-3d.zip
+adjoint_illustration.pdf
