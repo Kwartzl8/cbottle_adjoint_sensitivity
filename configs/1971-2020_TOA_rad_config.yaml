@@ -1,6 +1,6 @@
 # Main experiment settings
 experiment:
-  name: "Full Year 1971-2020 Global TOA Radiation Gradients"
+  name: "1971-2020 Global TOA Radiation Gradients"
   output_path: "/inference_output/1971_2020_global_toa_rad_169h"
   seed: 42 # Use an integer for reproducible noise, null for random
 

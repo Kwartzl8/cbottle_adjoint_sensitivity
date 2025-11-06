@@ -1,6 +1,6 @@
 # Main experiment settings
 experiment:
-  name: "Full Year 2020-2021 North Atlantic RLUT"
+  name: "2020 North Atlantic RSUT"
   output_path: "/inference_output/2020_north_atlantic_rsut_24h_fixed_noise"
   seed: 42 # Use an integer for reproducible noise, null for random
 
